@@ -149,7 +149,7 @@ proxy_status() {
 }
 
 proxy_test() {
-	curl -I https://www.baidu.com 2>&1 | head -n 20
+	curl -I https://www.google.com 2>&1 | head -n 20
 }
 
 # 用法示例：
@@ -184,7 +184,7 @@ unset no_proxy NO_PROXY
 
 - 快速连通性测试：
 ```bash
-curl -I https://www.baidu.com
+curl -I https://www.google.com
 ```
 
 - 注意：
