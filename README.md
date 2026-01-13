@@ -62,6 +62,8 @@ sudo systemctl daemon-reload
 sudo systemctl restart mihomo
 ```
 此时 `ExecStart` 应为 `/usr/local/bin/mihomo -f /path/to/clash/config/config.yaml`，`WorkingDirectory` 为 `/path/to/clash/config`。
+> 注意：如果父目录更改，相应的服务中文件目录也要更改
+
 
 ## 4. 网页管理（优先本机/自托管；在线托管有拦截风险）
 - 优先：自托管/本机托管面板（避免在线托管被拦截）
