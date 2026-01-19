@@ -74,6 +74,7 @@ sudo cp service/yacd-meta.service /etc/systemd/system/yacd-meta.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now yacd-meta
 # 访问 http://<服务器IP>:19090
+# 防火墙放行：务必确认宿主机防火墙（UFW/Firewalld）已开放对应端口（如 sudo ufw allow 19090/tcp），否则外部及虚拟网流量会被拦截。
 ```
 	- 若需拉取静态文件，可用 `bin/install_dashboard.sh`，或在其他机器下载后拷贝到 `web/yacd-meta`。
 	- 如需部署到 `/opt/yacd-meta`（与默认 service 匹配），参考：
@@ -206,3 +207,76 @@ ss -lntp | grep -E '7890|7891'
 ## 7. 安全建议
 - 设置强 `secret` 并限制 `9090` 的外网访问（如用防火墙）。
 - 仅本机使用时，可将控制器与代理端口绑定到本地地址并关闭 `allow-lan`。
+
+## 8. 更新订阅/配置后要做什么（快速清单）
+
+以下步骤适用于你用新的订阅链接更新了配置（无论写入仓库路径还是系统路径），确保面板可用、可选节点且服务读取的是你刚更新的文件。
+
+1) 拉取订阅并生成配置
+
+```bash
+# 写入仓库内配置（推荐便于维护）
+cd /path/to/clash
+./bin/fetch_config.sh --raw "http://sample.com?clash=1"
+
+# 或写入系统路径（服务默认读取 /etc/mihomo/config.yaml）
+sudo ./bin/fetch_config.sh --system --raw "http://sample.com?clash=1"
+```
+
+2) 确认服务实际读取的配置路径
+
+```bash
+sudo systemctl cat mihomo | grep -E 'ExecStart|WorkingDirectory'
+# 结果应指向以下二选一：
+# - /home/<user>/docker&apps/clash/config/config.yaml（仓库路径）
+# - /etc/mihomo/config.yaml（系统路径）
+```
+
+3) 放开控制端口给外部面板（Yacd）使用
+
+- 确保配置里存在：
+	- `allow-lan: true`
+	- `external-controller: 0.0.0.0:9090`
+
+两种路径分别修改（按你上一步确认的实际路径执行一条即可）：
+
+```bash
+# 情况 A：服务读系统路径
+sudo sed -i 's|^external-controller: .*|external-controller: 0.0.0.0:9090|' /etc/mihomo/config.yaml
+sudo sed -i 's|^allow-lan:.*|allow-lan: true|' /etc/mihomo/config.yaml
+
+# 情况 B：服务读仓库路径
+sed -i 's|^external-controller: .*|external-controller: 0.0.0.0:9090|' /home/trlives/docker&apps/clash/config/config.yaml
+sed -i 's|^allow-lan:.*|allow-lan: true|' /home/trlives/docker&apps/clash/config/config.yaml
+```
+
+4) 重启服务并验证监听
+
+```bash
+sudo systemctl restart mihomo
+sudo ss -lntp | grep -E '9090|7890|7891'
+# 期望看到：9090 监听在 0.0.0.0（或 *:9090），7890/7891 正常 LISTEN
+```
+
+5) 防火墙放行（如启用 UFW/Firewalld）
+
+```bash
+sudo ufw allow 9090/tcp
+# 如果自托管面板（yacd-meta.service）在 19090：
+sudo ufw allow 19090/tcp
+```
+
+6) 在面板中连接控制器
+
+- 自托管面板（默认 19090）：浏览器打开 `http://<服务器IP>:19090`
+- 在线面板（风险较高，需可信网络）：https://yacd.metacubex.one/
+- Controller 填写：`http://<服务器IP>:9090`（注意 http 而非 https）
+- 如果配置里设置了 `secret`，面板也要填相同密钥。
+
+7) 常见故障速查
+
+- 面板能打开但无法加载节点：`ss -lntp | grep 9090` 若显示 `127.0.0.1:9090`，说明控制端口仅本机监听，按第 3 步放开为 `0.0.0.0:9090` 并重启。
+- 改了仓库内 `config/config.yaml` 但不生效：服务可能仍读 `/etc/mihomo/config.yaml`。用第 2 步确认路径；要么把服务改为仓库路径，要么同步修改 `/etc/mihomo/config.yaml`。
+- 连不上控制器：检查防火墙是否放行 9090/TCP；浏览器不要用 https；如有 `secret` 必须一致。
+
+提示：本仓库内的默认配置已将 `external-controller` 设为 `0.0.0.0:9090`，路径在 [config/config.yaml](config/config.yaml)。如你改回本地监听（127.0.0.1），外部面板将无法连接。
