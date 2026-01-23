@@ -176,11 +176,54 @@ proxy_off() {
 	unset HTTP_PROXY HTTPS_PROXY ALL_PROXY
 	unset no_proxy NO_PROXY
 }
+
+proxy_test() {
+	# 通过 https 请求快速验证代理是否生效
+	# 如网络环境会阻断 Google，可替换为你可访问的站点
+	curl -I https://www.google.com 2>&1 | head -n 20
+}
 ```
 
-快速测试：
+快速测试（推荐）：
 ```bash
-curl -I https://www.google.com
+proxy_on
+proxy_test
+proxy_off
+```
+
+VS Code Remote 提示（Copilot/扩展也走代理）：
+- 在远端 VS Code 设置中打开 Remote Settings (JSON)，加入：
+```json
+{
+	"http.proxy": "http://127.0.0.1:7890",
+	"http.proxySupport": "override",
+	"http.systemCertificates": true
+}
+```
+- 重载窗口后生效；确保远端终端的 `http_proxy/https_proxy/all_proxy` 也已设置或通过 `bin/use_proxy.sh` 启用。
+
+终端自启（可选）：登录/新终端默认执行 `proxy_on`
+
+- 开启（追加到 `~/.bashrc`）：
+```bash
+cat >> ~/.bashrc <<'EOF'
+
+# Clash Proxy Auto-Enable (set CLASH_PROXY_DEFAULT=off to disable)
+if [ "${CLASH_PROXY_DEFAULT:-on}" = "on" ]; then
+	proxy_on
+fi
+EOF
+
+source ~/.bashrc
+```
+
+- 关闭默认自启（任选其一）：
+```bash
+# 仅对当前 shell 关闭
+export CLASH_PROXY_DEFAULT=off
+
+# 或写入 ~/.bashrc 永久关闭（自行选择位置）
+echo 'export CLASH_PROXY_DEFAULT=off' >> ~/.bashrc
 ```
 
 ## 7. 常用命令与排错
