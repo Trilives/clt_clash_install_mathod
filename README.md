@@ -244,7 +244,7 @@ cd "/path/to/clash"
 sudo ./bin/fetch_config.sh --system --raw "http://<your-subscription-url>?clash=1"
 ```
 
-2)（可选）再跑一次 JS 复写脚本（见第 3 节）。
+2) （可选）再跑一次 JS 复写脚本（见第 3 节）。
 
 3) 确认服务读取的配置路径：
 ```bash
