@@ -48,8 +48,8 @@ function main(config) {
     { 
       name: "GOOGLE", 
       type: "select", 
-      proxies: ["通用境外", ...autoRegionGroups.map(g => g.name)] 
-    },
+      proxies: ["新加坡-自动选优", "日本-自动选优", "香港-自动选优", "台湾-自动选优", "美国-自动选优", "通用境外"] 
+    },// 优先新加坡日本，解锁Gemini
     { 
       name: "OPENAI", 
       type: "select", 
