@@ -2,8 +2,9 @@
 
 手动下载并运行原生 Mihomo（Clash Meta）内核，配合面板管理，使用订阅链接生成配置，最后注册为系统服务。（提出思路，修正细节，由AI编写文本，已验证成功）
 
-- 订阅示例：`http://sample.com?clash=1`
+- 订阅示例：`http://<your-subscription-url>?clash=1`
 - 推荐本机/自托管面板；在线托管可能被拦截，仅在可信网络下使用
+> 提示：下文出现的 `/path/to/clash`、`<your-subscription-url>` 等占位符，请替换为你自己的实际路径与订阅地址。
 
 ## 1. 手动下载并安装内核
 1) 在可联网电脑打开：https://github.com/MetaCubeX/mihomo/releases
@@ -63,6 +64,50 @@ sudo systemctl restart mihomo
 ```
 此时 `ExecStart` 应为 `/usr/local/bin/mihomo -f /path/to/clash/config/config.yaml`，`WorkingDirectory` 为 `/path/to/clash/config`。
 > 注意：如果父目录更改，相应的服务中文件目录也要更改
+
+## 2.5 用 JS 脚本复写生成的 config（两种模式二选一）
+生成订阅后，可用仓库内脚本重写 `config/config.yaml` 的分组与规则：
+
+1) 备份当前配置（可选）：
+```bash
+cd /path/to/clash
+cp config/config.yaml config/config.yaml.bak
+```
+
+2) 安装一次依赖（需 Node.js）：
+```bash
+npm install js-yaml --prefix /path/to/clash
+```
+
+3) 运行脚本（按需选一个）：
+- 故障转移模式：
+```bash
+cd /path/to/clash
+node - <<'NODE'
+const fs = require('fs');
+const yaml = require('./node_modules/js-yaml');
+const { main } = require('./Script_cover_config/Fallback');
+const path = './config/config.yaml';
+const cfg = yaml.load(fs.readFileSync(path, 'utf8'));
+fs.writeFileSync(path, yaml.dump(main(cfg), { lineWidth: -1 }));
+console.log('已应用 Fallback 脚本 ->', path);
+NODE
+```
+- 自动测速模式：
+```bash
+cd /path/to/clash
+node - <<'NODE'
+const fs = require('fs');
+const yaml = require('./node_modules/js-yaml');
+const { main } = require('./Script_cover_config/url-test');
+const path = './config/config.yaml';
+const cfg = yaml.load(fs.readFileSync(path, 'utf8'));
+fs.writeFileSync(path, yaml.dump(main(cfg), { lineWidth: -1 }));
+console.log('已应用 url-test 脚本 ->', path);
+NODE
+```
+
+提示：每次用 `bin/fetch_config.sh` 拉新订阅后，如需同样策略，再跑一次对应脚本即可。
 
 
 ## 4. 网页管理（优先本机/自托管；在线托管有拦截风险）
@@ -246,8 +291,8 @@ sudo sed -i 's|^external-controller: .*|external-controller: 0.0.0.0:9090|' /etc
 sudo sed -i 's|^allow-lan:.*|allow-lan: true|' /etc/mihomo/config.yaml
 
 # 情况 B：服务读仓库路径
-sed -i 's|^external-controller: .*|external-controller: 0.0.0.0:9090|' /home/trlives/docker&apps/clash/config/config.yaml
-sed -i 's|^allow-lan:.*|allow-lan: true|' /home/trlives/docker&apps/clash/config/config.yaml
+sed -i 's|^external-controller: .*|external-controller: 0.0.0.0:9090|' /path/to/clash/config/config.yaml
+sed -i 's|^allow-lan:.*|allow-lan: true|' /path/to/clash/config/config.yaml
 ```
 
 4) 重启服务并验证监听
