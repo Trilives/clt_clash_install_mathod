@@ -1,6 +1,6 @@
-# 原生安装：Clash Meta（Mihomo）最简指南
+# 服务器安装：Clash Meta（Mihomo）最简指南
 
-这份文档用于在 Linux 上部署 Mihomo（Clash Meta）内核：
+这份文档用于在 Linux 服务器上部署 Mihomo（Clash Meta）内核：
 用订阅链接生成配置（可选再用 JS 规则脚本“复写”分组/规则），最后注册为 systemd 服务，并通过面板管理。
 
 - 订阅示例：`http://<your-subscription-url>?clash=1`
