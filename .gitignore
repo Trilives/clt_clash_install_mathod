@@ -2,3 +2,13 @@ config/
 node_modules/
 package-lock.json
 package.json
+
+# Local dashboard assets (third-party bundle)
+web/yacd-meta/
+
+# Environment and logs
+.env
+*.log
+
+# Python cache
+__pycache__/
